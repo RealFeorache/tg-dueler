@@ -1,4 +1,4 @@
-"""Helping functions for the bot."""
+"""Database related module."""
 from pony.orm import *
 from main import constants
 
