@@ -1,7 +1,7 @@
 """Say hello."""
 from telegram import Update, User
 from telegram.ext import CallbackContext
-import main.helpers
+from main.database import *
 
 
 def whiteglove(update: Update, context: CallbackContext):
@@ -49,35 +49,38 @@ def validity_check(update: Update, context: CallbackContext):
     return reply
 
 
-@main.helpers.db_session
+@db_session
 def record_duel_call(update: Update, context: CallbackContext,
                      init_data: User, targ_data: User):
     """Record the duel call."""
     # Record the chat
-    if not main.helpers.Chats.exists(id=update.message.chat.id):
-        main.helpers.Chats(
+    if not Chats.exists(id=update.message.chat.id):
+        Chats(
             id=update.message.chat.id,
-            title=update.message.chat.title if update.message.chat.title else 'Private',
-            link=update.message.chat.link if update.message.chat.link else 'Private'
+            title=update.message.chat.title or 'Private',
+            link=update.message.chat.link or 'Private'
         )
     # Record the users
     for data in init_data, targ_data:
-        if not main.helpers.Users.exists(id=data.id):
-            main.helpers.Users(
+        if not Users.exists(id=data.id):
+            Users(
                 id=data.id,
                 full_name=data.full_name,
-                username=data.username if data.username else 'Unknown',
-                link=data.link if data.link else 'Unknown',
+                username=data.username or 'Unknown',
+                link=data.link or 'Unknown',
             )
     # Record the target for the duel
-    if not main.helpers.Scores.exists(
-        user_id=main.helpers.Users[init_data.id].id,
-        chat_id=main.helpers.Chats[update.message.chat.id].id
+    if not Scores.exists(
+        user_id=Users[init_data.id],
+        chat_id=Chats[update.message.chat.id]
     ):
-        main.helpers.Scores(
-            user_id=main.helpers.Users[init_data.id].id,
-            chat_id=main.helpers.Chats[update.message.chat.id].id,
-            target_id=main.helpers.Users[targ_data.id].id
+        Scores(
+            user_id=Users[init_data.id],
+            chat_id=Chats[update.message.chat.id],
+            target_id=Users[targ_data.id]
         )
     else:
-        pass
+        Scores[
+            Users[init_data.id],
+            Chats[update.message.chat.id]
+        ].target_id = Users[targ_data.id]

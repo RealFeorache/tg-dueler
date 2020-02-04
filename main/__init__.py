@@ -1,7 +1,6 @@
 """Module dedicated to bot initiation variables that are usable in other modules."""
 import logging
 import random
-import main.helpers
 
 from telegram.ext import Updater
 

@@ -38,7 +38,7 @@ class Scores(db.Entity):
     wins = Optional(int, default=0)
     losses = Optional(int, default=0)
     misses = Optional(int, default=0)
-    composite_key(user_id, chat_id)
+    PrimaryKey(user_id, chat_id)
 
 
 db.bind(provider='sqlite', filename=constants.DATABASE_NAME, create_db=True)
