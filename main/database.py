@@ -38,8 +38,8 @@ class Scores(db.Entity):
     chat_id = Required(Chats)
     target_id = Optional(Users, reverse='tscores')
     last_duel = Optional(datetime)
-    wins = Optional(int, default=0)
-    losses = Optional(int, default=0)
+    kills = Optional(int, default=0)
+    deaths = Optional(int, default=0)
     misses = Optional(int, default=0)
     PrimaryKey(user_id, chat_id)
 
