@@ -52,12 +52,20 @@ def record_user_chat_data(update: Update, context: CallbackContext):
             title=update.message.chat.title or 'Private',
             link=update.message.chat.link or 'Private'
         )
-    # Record the users
+    # Record the users and scores
     for data in init_data, targ_data:
-        if not Users.exists(id=data.id):
+        if not Users.exists(
+                id=data.id):
             Users(
                 id=data.id,
                 full_name=data.full_name,
                 username=data.username or 'Unknown',
                 link=data.link or 'Unknown',
+            )
+        if not Scores.exists(
+                user_id=Users[data.id],
+                chat_id=Chats[update.message.chat.id]):
+            Scores(
+                user_id=Users[data.id],
+                chat_id=Chats[update.message.chat.id]
             )

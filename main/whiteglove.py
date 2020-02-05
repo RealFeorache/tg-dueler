@@ -16,20 +16,10 @@ def whiteglove(update: Update, context: CallbackContext) -> Message:
     targ_data = update.message.reply_to_message.from_user
     targ_tag = f'[{targ_data.first_name}](tg://user?id={targ_data.id})'
     # Add the duel call
-    if not Scores.exists(
-        user_id=Users[init_data.id],
-        chat_id=Chats[update.message.chat.id]
-    ):
-        Scores(
-            user_id=Users[init_data.id],
-            chat_id=Chats[update.message.chat.id],
-            target_id=Users[targ_data.id]
-        )
-    else:
-        Scores[
-            Users[init_data.id],
-            Chats[update.message.chat.id]
-        ].target_id = Users[targ_data.id]
+    Scores[
+        Users[init_data.id],
+        Chats[update.message.chat.id]
+    ].target_id = Users[targ_data.id]
     # Notify that the whiteglove call was successful
     context.bot.send_message(
         chat_id=update.message.chat.id,

@@ -54,8 +54,9 @@ def duel(update: Update, context: CallbackContext) -> Message:
         duel_result = 'TARG KILLED INIT MESSAGE'
         outcome_storer['init']['score'] = (0, 1, 0)
         outcome_storer['targ']['score'] = (1, 0, 0)
+    duel_result += f'\n{targ_data.full_name} забрал свою перчатку, дуэль состоялась.'
     # Record outcome
-    record_outcome(outcome_storer)
+    record_outcome(outcome_storer, update)
     # Result message
     context.bot.send_message(
         chat_id=update.message.chat.id,
@@ -67,13 +68,9 @@ def duel(update: Update, context: CallbackContext) -> Message:
 @db_session
 def called_to_duel(update: Update, init_data: User, targ_data: User) -> bool:
     """Check if the target has called the initiator onto a duel using /whiteglove."""
-    if Scores.exists(
-        user_id=Users[targ_data.id],
-        chat_id=Chats[update.message.chat.id]
-    ):
-        if Scores[Users[targ_data.id], Chats[update.message.chat.id]].target_id \
-                is Users[init_data.id]:
-            return True
+    if Scores[Users[targ_data.id], Chats[update.message.chat.id]].target_id \
+            is Users[init_data.id]:
+        return True
     return False
 
 
@@ -81,18 +78,25 @@ def called_to_duel(update: Update, init_data: User, targ_data: User) -> bool:
 def get_win_chance(update: Update, user_data: User) -> float:
     """Get the win chance of a user, accounting for the experience."""
     win_roll = randomizer.uniform(0, DD['RANDOM_ROLL_CAP'])
-    if Scores.exists(
-        user_id=Users[user_data.id],
-        chat_id=Chats[update.message.chat.id]
-    ):
-        user_score = Scores[Users[user_data.id], Chats[update.message.chat.id]]
-        win_roll += (user_score.kills * DD['KILL_EXP'] +
-                     user_score.deaths * DD['DEATH_EXP'] +
-                     user_score.misses * DD['MISS_EXP'])
+    user_score = Scores[Users[user_data.id], Chats[update.message.chat.id]]
+    win_roll += (user_score.kills * DD['KILL_EXP'] +
+                 user_score.deaths * DD['DEATH_EXP'] +
+                 user_score.misses * DD['MISS_EXP'])
     return win_roll
 
 
 @db_session
-def record_outcome(outcome_storer: dict) -> None:
-    """Record the outcome in the database"""
-    pass
+def record_outcome(outcome_storer: dict, update: Update) -> None:
+    """Record the outcome in the database."""
+    # Record both player data
+    for player in outcome_storer.values():
+        # Add KDA
+        Scores[Users[player['user'].id],
+               Chats[update.message.chat.id]].kills += player['score'][0]
+        Scores[Users[player['user'].id],
+               Chats[update.message.chat.id]].deaths += player['score'][1]
+        Scores[Users[player['user'].id],
+               Chats[update.message.chat.id]].misses += player['score'][2]
+    # Remove whiteglove from target, as the duel took place
+    Scores[Users[outcome_storer['targ']['user'].id],
+           Chats[update.message.chat.id]].target_id = None
