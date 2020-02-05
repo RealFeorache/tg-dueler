@@ -3,6 +3,7 @@
 from main import updater, dispatcher
 from main.whiteglove import whiteglove
 from main.duel import duel
+from main.admicommands import options
 from telegram.ext import CommandHandler
 
 __author__ = "Vlad Chitic"
@@ -18,6 +19,7 @@ __status__ = "Prototype"
 def main():
     dispatcher.add_handler(CommandHandler("whiteglove", whiteglove))
     dispatcher.add_handler(CommandHandler("duel", duel))
+    dispatcher.add_handler(CommandHandler("options", options))
     updater.start_polling(clean=True)
     updater.idle()
 

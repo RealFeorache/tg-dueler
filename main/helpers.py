@@ -1,7 +1,9 @@
 """Helping function for the bot, not main ones."""
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import CallbackContext
 from main.database import *
+from datetime import timedelta
+from main.constants import DUEL_COOLDOWN
 
 
 def validity_check(func):
@@ -69,3 +71,24 @@ def record_user_chat_data(update: Update, context: CallbackContext):
                 user_id=Users[data.id],
                 chat_id=Chats[update.message.chat.id]
             )
+
+
+def check_cooldown(func) -> Message:
+    """Check if there is a cooldown for the duel for the user."""
+
+    @db_session
+    def cooldown(update: Update, context: CallbackContext, *args, **kwargs):
+        last_duel = Scores[Users[update.message.from_user.id],
+                           Chats[update.message.chat.id]].last_duel
+        if last_duel is None or last_duel < datetime.now() - timedelta(minutes=DUEL_COOLDOWN):
+            func(update, context, *args, **kwargs)
+        else:
+            time_to_duel = last_duel + \
+                timedelta(minutes=DUEL_COOLDOWN) - datetime.now()
+            time_to_duel = time_to_duel.seconds
+            context.bot.send_message(
+                chat_id=update.message.chat.id,
+                text=f'До вашей следующей дуэли осталось {time_to_duel} секунд.',
+                reply_to_message_id=update.message.message_id
+            )
+    return cooldown

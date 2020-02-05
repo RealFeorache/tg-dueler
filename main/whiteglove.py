@@ -1,4 +1,4 @@
-"""Say hello."""
+"""Basically, a call for a duel."""
 from telegram import Update, User, Message
 from telegram.ext import CallbackContext
 from main.helpers import validity_check

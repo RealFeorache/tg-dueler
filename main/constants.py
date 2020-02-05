@@ -4,6 +4,7 @@ DATABASE_NAME = 'duels.sqlite'
 
 
 # Duel constants, change only dictionary values
+DUEL_COOLDOWN = 10  # 10 minutes
 DD = {
     'RANDOM_ROLL_CAP': 0.8,
     'WINS_TO_MAX_EXP': 900,
