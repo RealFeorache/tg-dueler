@@ -42,28 +42,20 @@ def record_user_chat_data(update: Update, context: CallbackContext, *users):
     """Record the User and Chat data to the table."""
     # Record the chat
     if not Chats.exists(id=update.message.chat.id):
-        Chats(
-            id=update.message.chat.id,
-            title=update.message.chat.title or 'Private',
-            link=update.message.chat.link or 'Private'
-        )
+        Chats(id=update.message.chat.id,
+              title=update.message.chat.title or 'Private',
+              link=update.message.chat.link or 'Private')
     # Record the users and scores
     for data in users:
-        if not Users.exists(
-                id=data.id):
-            Users(
-                id=data.id,
-                full_name=data.full_name,
-                username=data.username or 'Unknown',
-                link=data.link or 'Unknown',
-            )
-        if not Scores.exists(
-                user_id=Users[data.id],
-                chat_id=Chats[update.message.chat.id]):
-            Scores(
-                user_id=Users[data.id],
-                chat_id=Chats[update.message.chat.id]
-            )
+        if not Users.exists(id=data.id):
+            Users(id=data.id,
+                  full_name=data.full_name,
+                  username=data.username or 'Unknown',
+                  link=data.link or 'Unknown')
+        if not Scores.exists(user_id=Users[data.id],
+                             chat_id=Chats[update.message.chat.id]):
+            Scores(user_id=Users[data.id],
+                   chat_id=Chats[update.message.chat.id])
 
 
 def check_cooldown(func) -> Message:
@@ -73,15 +65,16 @@ def check_cooldown(func) -> Message:
     def cooldown(update: Update, context: CallbackContext, *args, **kwargs):
         last_duel = Scores[Users[update.message.from_user.id],
                            Chats[update.message.chat.id]].last_duel
-        if last_duel is None or last_duel < datetime.now() - timedelta(minutes=DUEL_COOLDOWN):
+        if last_duel is None or \
+                last_duel < datetime.now() - timedelta(minutes=DUEL_COOLDOWN):
             func(update, context, *args, **kwargs)
         else:
-            time_to_duel = last_duel + \
+            remaining = last_duel + \
                 timedelta(minutes=DUEL_COOLDOWN) - datetime.now()
-            time_to_duel = time_to_duel.seconds
             update.message.reply_text(
-                f'До вашей следующей дуэли осталось {time_to_duel} секунд.'
+                f'До вашей инициации следующей дуэли осталось {remaining.seconds} секунд.'
             )
+
     return cooldown
 
 
@@ -99,4 +92,5 @@ def admin_check(func) -> Message:
         else:
             update.message.reply_text(
                 'Эта команда только для администраторов.')
+
     return checker

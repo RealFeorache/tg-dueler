@@ -84,12 +84,12 @@ def record_outcome(outcome_storer: dict, update: Update) -> None:
     """Record the outcome in the database."""
     # Record both player data
     for player in outcome_storer.values():
-        user_db_data = Scores[Users[player['user'].id],
-                              Chats[update.message.chat.id]]
+        user_score = Scores[Users[player['user'].id],
+                            Chats[update.message.chat.id]]
         # Add KDA
-        user_db_data.kills += player['score'][0]
-        user_db_data.deaths += player['score'][1]
-        user_db_data.misses += player['score'][2]
+        user_score.kills += player['score'][0]
+        user_score.deaths += player['score'][1]
+        user_score.misses += player['score'][2]
     # Remove whiteglove from target, as the duel took place
     Scores[Users[outcome_storer['targ']['user'].id],
            Chats[update.message.chat.id]].target_id = None

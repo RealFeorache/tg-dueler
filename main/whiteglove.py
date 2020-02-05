@@ -16,11 +16,9 @@ def whiteglove(update: Update, context: CallbackContext) -> Message:
     targ_data = update.message.reply_to_message.from_user
     targ_tag = f'[{targ_data.first_name}](tg://user?id={targ_data.id})'
     record_user_chat_data(update, context, init_data, targ_data)
-    # Add the duel call
-    Scores[
-        Users[init_data.id],
-        Chats[update.message.chat.id]
-    ].target_id = Users[targ_data.id]
+    # Add the duel call to the database
+    Scores[Users[init_data.id], Chats[update.message.chat.id]].target_id = \
+        Users[targ_data.id]
     # Notify that the whiteglove call was successful
     update.message.reply_text(
         text=(f'{init_tag} вызвал {targ_tag} на дуэль!\n'
