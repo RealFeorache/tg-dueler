@@ -26,7 +26,6 @@ def bothelp(update: Update, context: CallbackContext):
         "Автор: @doitforricardo"
     )
     update.message.reply_text(help_text)
-    pass
 
 
 def main():
