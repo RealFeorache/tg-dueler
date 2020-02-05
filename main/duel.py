@@ -31,11 +31,11 @@ def duel(update: Update, context: CallbackContext) -> Message:
     outcome_storer = {
         'init': {
             'user': init_data,
-            'score': (,)
-        }
+            'score': tuple()
+        },
         'targ': {
             'user': targ_data,
-            'score': (,)
+            'score': tuple()
         }
     }
     if init_roll < win_threshold and targ_roll < win_threshold:

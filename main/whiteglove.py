@@ -1,5 +1,5 @@
 """Say hello."""
-from telegram import Update, User
+from telegram import Update, User, Message
 from telegram.ext import CallbackContext
 from main.helpers import validity_check
 from main.database import *
@@ -7,7 +7,7 @@ from main.database import *
 
 @validity_check
 @db_session
-def whiteglove(update: Update, context: CallbackContext):
+def whiteglove(update: Update, context: CallbackContext) -> Message:
     """Call another user on a duel."""
     # Get initiator data and tag
     init_data = update.message.from_user
