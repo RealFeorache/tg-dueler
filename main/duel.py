@@ -1,9 +1,9 @@
 """Module responsible for duels."""
-
+# TODO - ADD PHRASES
 from telegram import Update, User, Message
 from telegram.ext import CallbackContext
 from main import randomizer
-from main.helpers import validity_check, check_cooldown
+from main.helpers import validity_check, check_cooldown, record_user_chat_data
 from main.database import *
 from main.constants import DD
 
@@ -12,16 +12,13 @@ from main.constants import DD
 @check_cooldown
 def duel(update: Update, context: CallbackContext) -> Message:
     """Duel the person if he has whitegloved you."""
-    # Get users
+    # Get users and record
     init_data = update.message.from_user
     targ_data = update.message.reply_to_message.from_user
+    record_user_chat_data(update, context, init_data, targ_data)
     # Check if the target has whitegloved the initiator
     if not called_to_duel(update, init_data, targ_data):
-        context.bot.send_message(
-            chat_id=update.message.chat.id,
-            text='Этот пользователь не вызывал вас на дуэль.',
-            reply_to_message_id=update.message.message_id
-        )
+        update.message.reply_text('Этот пользователь не вызывал вас на дуэль.')
         return
     # Proceed to the duel
     win_threshold = randomizer.uniform(0, DD['WIN_ROLL_CAP'])
@@ -59,12 +56,7 @@ def duel(update: Update, context: CallbackContext) -> Message:
     # Record outcome
     record_outcome(outcome_storer, update)
     # Result message
-    context.bot.send_message(
-        chat_id=update.message.chat.id,
-        text=duel_result,
-        reply_to_message_id=update.message.message_id,
-        parse_mode='Markdown'
-    )
+    update.message.reply_text(text=duel_result, parse_mode='Markdown')
 
 
 @db_session

@@ -30,23 +30,16 @@ def validity_check(func):
         elif update.message.reply_to_message.from_user.is_bot:
             objection = 'Бота невозможно вызвать на дуэль.'
         if objection:
-            context.bot.send_message(
-                chat_id=update.message.chat.id,
-                text=objection,
-                reply_to_message_id=update.message.message_id
-            )
+            update.message.reply_text(objection)
             return
-        record_user_chat_data(update, context)
         func(update, context, *args, **kwargs)
 
     return checker
 
 
 @db_session
-def record_user_chat_data(update: Update, context: CallbackContext):
+def record_user_chat_data(update: Update, context: CallbackContext, *users):
     """Record the User and Chat data to the table."""
-    init_data = update.message.from_user
-    targ_data = update.message.reply_to_message.from_user
     # Record the chat
     if not Chats.exists(id=update.message.chat.id):
         Chats(
@@ -55,7 +48,7 @@ def record_user_chat_data(update: Update, context: CallbackContext):
             link=update.message.chat.link or 'Private'
         )
     # Record the users and scores
-    for data in init_data, targ_data:
+    for data in users:
         if not Users.exists(
                 id=data.id):
             Users(
@@ -86,9 +79,24 @@ def check_cooldown(func) -> Message:
             time_to_duel = last_duel + \
                 timedelta(minutes=DUEL_COOLDOWN) - datetime.now()
             time_to_duel = time_to_duel.seconds
-            context.bot.send_message(
-                chat_id=update.message.chat.id,
-                text=f'До вашей следующей дуэли осталось {time_to_duel} секунд.',
-                reply_to_message_id=update.message.message_id
+            update.message.reply_text(
+                f'До вашей следующей дуэли осталось {time_to_duel} секунд.'
             )
     return cooldown
+
+
+def admin_check(func) -> Message:
+    """Check if the command came from the admin."""
+
+    def checker(update: Update, context: CallbackContext, *args, **kwargs):
+        admins = [
+            u.user for u in context.bot.get_chat_administrators(
+                chat_id=update.message.chat.id
+            )
+        ]
+        if update.message.from_user in admins:
+            func(update, context, *args, **kwargs)
+        else:
+            update.message.reply_text(
+                'Эта команда только для администраторов.')
+    return checker
