@@ -1,6 +1,7 @@
 """Helping function for the bot, not main ones."""
 from telegram import Update
 from telegram.ext import CallbackContext
+from main.database import *
 
 
 def validity_check(func):
@@ -33,6 +34,30 @@ def validity_check(func):
                 reply_to_message_id=update.message.message_id
             )
             return
+        record_user_chat_data(update, context)
         func(update, context, *args, **kwargs)
 
     return checker
+
+
+@db_session
+def record_user_chat_data(update: Update, context: CallbackContext):
+    """Record the User and Chat data to the table."""
+    init_data = update.message.from_user
+    targ_data = update.message.reply_to_message.from_user
+    # Record the chat
+    if not Chats.exists(id=update.message.chat.id):
+        Chats(
+            id=update.message.chat.id,
+            title=update.message.chat.title or 'Private',
+            link=update.message.chat.link or 'Private'
+        )
+    # Record the users
+    for data in init_data, targ_data:
+        if not Users.exists(id=data.id):
+            Users(
+                id=data.id,
+                full_name=data.full_name,
+                username=data.username or 'Unknown',
+                link=data.link or 'Unknown',
+            )

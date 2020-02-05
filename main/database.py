@@ -1,6 +1,7 @@
 """Database related module."""
 from pony.orm import *
 from main import constants
+from datetime import datetime
 
 
 db = Database()
@@ -27,6 +28,7 @@ class Chats(db.Entity):
     # If the chat has a username, returns a t.me link of the chat.
     link = Optional(str)
     scores = Set('Scores')
+    duel_cooldown = Optional(int, default=10)
 
 
 class Scores(db.Entity):
@@ -35,6 +37,7 @@ class Scores(db.Entity):
     user_id = Required(Users, reverse='scores')
     chat_id = Required(Chats)
     target_id = Optional(Users, reverse='tscores')
+    last_duel = Optional(datetime)
     wins = Optional(int, default=0)
     losses = Optional(int, default=0)
     misses = Optional(int, default=0)
