@@ -28,7 +28,7 @@ class Chats(db.Entity):
     # If the chat has a username, returns a t.me link of the chat.
     link = Optional(str)
     scores = Set('Scores')
-    duel_cooldown = Optional(int, default=10)
+    duel_cooldown = Required(int, default=10)
 
 
 class Scores(db.Entity):
