@@ -3,7 +3,8 @@
 from main import updater, dispatcher
 from main.whiteglove import whiteglove
 from main.duel import duel
-from main.admicommands import set_duel_cooldown
+from main.myscore import myscore
+from main.admincommands import set_duel_cooldown
 from telegram import Update
 from telegram.ext import CommandHandler, CallbackContext
 
@@ -20,8 +21,10 @@ __status__ = "Prototype"
 def bothelp(update: Update, context: CallbackContext):
     """Send the help message."""
     help_text = (
+        "Вызванным на дуэль может одновременно быть только один человек!\n"
         "/whiteglove - вызвать на дуэль\n"
         "/duel - провести дуэль с вызвавшим\n"
+        "/myscore - счёт по дуэлям и опыт\n"
         "/setduelcooldown [число] - изменить задержку на дуэль (для админов)\n"
         "Автор: @doitforricardo"
     )
@@ -31,6 +34,7 @@ def bothelp(update: Update, context: CallbackContext):
 def main():
     dispatcher.add_handler(CommandHandler("whiteglove", whiteglove))
     dispatcher.add_handler(CommandHandler("duel", duel))
+    dispatcher.add_handler(CommandHandler("myscore", myscore))
     dispatcher.add_handler(CommandHandler(
         "setduelcooldown", set_duel_cooldown))
     dispatcher.add_handler(CommandHandler("help", bothelp))

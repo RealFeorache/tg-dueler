@@ -1,5 +1,4 @@
 """Module responsible for duels."""
-# TODO - ADD PHRASES
 from telegram import Update, User, Message
 from telegram.ext import CallbackContext
 from main import randomizer
@@ -14,7 +13,9 @@ def duel(update: Update, context: CallbackContext) -> Message:
     """Duel the person if he has whitegloved you."""
     # Get users and record
     init_data = update.message.from_user
+    init_tag = f'[{init_data.first_name}](tg://user?id={init_data.id})'
     targ_data = update.message.reply_to_message.from_user
+    targ_tag = f'[{targ_data.first_name}](tg://user?id={targ_data.id})'
     record_user_chat_data(update, context, init_data, targ_data)
     # Check if the target has whitegloved the initiator
     if not called_to_duel(update, init_data, targ_data):
@@ -22,39 +23,42 @@ def duel(update: Update, context: CallbackContext) -> Message:
         return
     # Proceed to the duel
     win_threshold = randomizer.uniform(0, DD['WIN_ROLL_CAP'])
-    init_roll = get_win_chance(update, init_data)
-    targ_roll = get_win_chance(update, targ_data)
+    init_roll = get_win_chance(update)
+    targ_roll = get_win_chance(update)
     # Duel outcomes message
     outcome_storer = {
         'init': {
             'user': init_data,
+            'tag': init_tag,
             'score': tuple()
         },
         'targ': {
             'user': targ_data,
+            'tag': targ_tag,
             'score': tuple()
         }
     }
+    # Scenarios
+    winner, loser = '', ''
     if init_roll < win_threshold and targ_roll < win_threshold:
-        duel_result = 'BOTH MISSED MESSAGE'
         outcome_storer['init']['score'] = (0, 0, 1)
         outcome_storer['targ']['score'] = (0, 0, 1)
     elif init_roll > win_threshold and targ_roll > win_threshold:
-        duel_result = 'KILLED EACH OTHER MESSAGE'
         outcome_storer['init']['score'] = (1, 1, 0)
         outcome_storer['targ']['score'] = (1, 1, 0)
     elif init_roll > win_threshold:
-        duel_result = 'INIT KILLED TARGET MESSAGE'
         outcome_storer['init']['score'] = (1, 0, 0)
         outcome_storer['targ']['score'] = (0, 1, 0)
+        winner = init_tag
+        loser = targ_tag
     elif targ_roll > win_threshold:
-        duel_result = 'TARG KILLED INIT MESSAGE'
         outcome_storer['init']['score'] = (0, 1, 0)
         outcome_storer['targ']['score'] = (1, 0, 0)
+        winner = targ_tag
+        loser = init_tag
+    duel_result = generate_duel_results(update, outcome_storer, winner, loser)
     duel_result += (f'\nДуэль состоялась, [{targ_data.full_name}](tg://user?id={targ_data.id})'
                     ' забрал свою перчатку.')
-    # Record outcome
-    record_outcome(outcome_storer, update)
     # Result message
     update.message.reply_text(text=duel_result, parse_mode='Markdown')
 
@@ -68,22 +72,52 @@ def called_to_duel(update: Update, init_data: User, targ_data: User) -> bool:
     return False
 
 
-@db_session
-def get_win_chance(update: Update, user_data: User) -> float:
+def get_win_chance(update: Update) -> float:
     """Get the win chance of a user, accounting for the experience."""
-    win_roll = randomizer.uniform(0, DD['RANDOM_ROLL_CAP'])
-    user_score = Scores[Users[user_data.id], Chats[update.message.chat.id]]
-    win_roll += (user_score.kills * DD['KILL_EXP'] +
-                 user_score.deaths * DD['DEATH_EXP'] +
-                 user_score.misses * DD['MISS_EXP'])
-    return win_roll
+    return randomizer.uniform(0, DD['RANDOM_ROLL_CAP']) + \
+        get_user_exp(update)
 
 
 @db_session
-def record_outcome(outcome_storer: dict, update: Update) -> None:
+def get_user_exp(update: Update) -> float:
+    """Get user EXP gained from duels."""
+    user_score = Scores[Users[update.message.from_user.id],
+                        Chats[update.message.chat.id]]
+    exp = (user_score.kills * DD['KILL_EXP'] +
+           user_score.deaths * DD['DEATH_EXP'] +
+           user_score.misses * DD['MISS_EXP'])
+    return exp
+
+
+def generate_duel_results(update: Update, outcome: dict,
+                          winner: str, loser: str) -> str:
+    """Generate the duel results message."""
+    from phrases.duels import (PHRASE_START, KILL_ACTIONS,
+                               DEATH_ACTIONS, MISS_ACTIONS)
+    ch = randomizer.choice
+    # Record into database
+    record_outcome(update, outcome)
+    # Start the phrase
+    res = f'{ch(PHRASE_START)} '
+    # Generate the middle
+    for player in outcome.values():
+        res += f"{player['tag']} {ch(KILL_ACTIONS)}"
+        if player['score'] in [(0, 0, 1), (0, 1, 0)]:
+            res += f', но {ch(MISS_ACTIONS)}. '
+        else:
+            res += ' и прикончил свою цель. '
+    if winner:
+        res += f'\n{loser} {ch(DEATH_ACTIONS)}! Победа за {winner}!'
+    else:
+        res += '\nОбъявляется ничья.'
+    return res
+
+
+@db_session
+def record_outcome(update: Update, outcome: dict) -> None:
     """Record the outcome in the database."""
     # Record both player data
-    for player in outcome_storer.values():
+    for player in outcome.values():
         user_score = Scores[Users[player['user'].id],
                             Chats[update.message.chat.id]]
         # Add KDA
@@ -91,8 +125,8 @@ def record_outcome(outcome_storer: dict, update: Update) -> None:
         user_score.deaths += player['score'][1]
         user_score.misses += player['score'][2]
     # Remove whiteglove from target, as the duel took place
-    Scores[Users[outcome_storer['targ']['user'].id],
+    Scores[Users[outcome['targ']['user'].id],
            Chats[update.message.chat.id]].target_id = None
     # Add cooldown
-    Scores[Users[outcome_storer['init']['user'].id],
+    Scores[Users[outcome['init']['user'].id],
            Chats[update.message.chat.id]].last_duel = datetime.now()

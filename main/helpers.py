@@ -3,7 +3,6 @@ from telegram import Update, Message
 from telegram.ext import CallbackContext
 from main.database import *
 from datetime import timedelta
-from main.constants import DUEL_COOLDOWN
 
 
 def validity_check(func):
@@ -63,16 +62,20 @@ def check_cooldown(func) -> Message:
 
     @db_session
     def cooldown(update: Update, context: CallbackContext, *args, **kwargs):
+        record_user_chat_data(update, context,
+                              update.message.from_user,
+                              update.message.reply_to_message.from_user)
         last_duel = Scores[Users[update.message.from_user.id],
                            Chats[update.message.chat.id]].last_duel
+        chat_cooldown = Chats[update.message.chat.id].duel_cooldown
         if last_duel is None or \
-                last_duel < datetime.now() - timedelta(minutes=DUEL_COOLDOWN):
+                last_duel < datetime.now() - timedelta(minutes=chat_cooldown):
             func(update, context, *args, **kwargs)
         else:
             remaining = last_duel + \
-                timedelta(minutes=DUEL_COOLDOWN) - datetime.now()
+                timedelta(minutes=chat_cooldown) - datetime.now()
             update.message.reply_text(
-                f'До вашей инициации следующей дуэли осталось {remaining.seconds} секунд.'
+                f'До вашей следующей инициации дуэли осталось {remaining.seconds} секунд.'
             )
 
     return cooldown
