@@ -49,13 +49,11 @@ def duel(update: Update, context: CallbackContext) -> Message:
     elif init_roll > win_threshold:
         outcome_storer['init']['score'] = (1, 0, 0)
         outcome_storer['targ']['score'] = (0, 1, 0)
-        winner = init_tag
-        loser = targ_tag
+        winner, loser = init_tag, targ_tag
     elif targ_roll > win_threshold:
         outcome_storer['init']['score'] = (0, 1, 0)
         outcome_storer['targ']['score'] = (1, 0, 0)
-        winner = targ_tag
-        loser = init_tag
+        winner, loser = targ_tag, init_tag
     duel_result = generate_duel_results(update, outcome_storer, winner, loser)
     duel_result += (f'\nДуэль состоялась, [{targ_data.full_name}](tg://user?id={targ_data.id})'
                     ' забрал свою перчатку.')
@@ -92,8 +90,10 @@ def get_user_exp(update: Update) -> float:
 def generate_duel_results(update: Update, outcome: dict,
                           winner: str, loser: str) -> str:
     """Generate the duel results message."""
-    from phrases.duels import (PHRASE_START, KILL_ACTIONS,
-                               DEATH_ACTIONS, MISS_ACTIONS)
+    from phrases.duel_phrases import (KILL_ACTIONS, DEATH_ACTIONS,
+                                      MISS_ACTIONS, PHRASE_START,
+                                      DRAW_ACTIONS, SUCC_ACTION,
+                                      DRAW_PROBLEM)
     ch = randomizer.choice
     # Record into database
     record_outcome(update, outcome)
@@ -101,15 +101,20 @@ def generate_duel_results(update: Update, outcome: dict,
     res = f'{ch(PHRASE_START)} '
     # Generate the middle
     for player in outcome.values():
+        # Action of trying to kill
         res += f"{player['tag']} {ch(KILL_ACTIONS)}"
+        # Miss or hit
         if player['score'] in [(0, 0, 1), (0, 1, 0)]:
             res += f', но {ch(MISS_ACTIONS)}. '
         else:
-            res += ' и прикончил свою цель. '
+            res += ' и ' + ch(SUCC_ACTION) + '. '
+    # Who won, who lost
     if winner:
         res += f'\n{loser} {ch(DEATH_ACTIONS)}! Победа за {winner}!'
     else:
-        res += '\nОбъявляется ничья.'
+        if randomizer.random() < 1/2:
+            res += '\n' + ch(DRAW_PROBLEM)
+        res += '\n' + ch(DRAW_ACTIONS)
     return res
 
 
