@@ -55,8 +55,8 @@ def duel(update: Update, context: CallbackContext) -> Message:
         outcome_storer['targ']['score'] = (1, 0, 0)
         winner, loser = targ_tag, init_tag
     duel_result = generate_duel_results(update, outcome_storer, winner, loser)
-    duel_result += (f'\nДуэль состоялась, [{targ_data.full_name}](tg://user?id={targ_data.id})'
-                    ' забрал свою перчатку.')
+    duel_result += (f'\nДуэль состоялась, перчатка [{targ_data.full_name}](tg://user?id={targ_data.id})'
+                    ' вернулась ему в карман.')
     # Result message
     update.message.reply_text(text=duel_result, parse_mode='Markdown')
 
