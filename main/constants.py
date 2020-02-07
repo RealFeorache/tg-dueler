@@ -2,7 +2,6 @@
 # Database constants
 DATABASE_NAME = 'duels.sqlite'
 
-
 # Duel constants, change only dictionary values
 DUEL_COOLDOWN = 10  # 10 minutes
 DD = {

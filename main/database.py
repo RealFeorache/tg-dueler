@@ -23,7 +23,7 @@ class Users(db.Entity):
 class Chats(db.Entity):
     """Telegram chats."""
 
-    id = PrimaryKey(int)
+    id = PrimaryKey(int, size=64)
     title = Optional(str)
     # If the chat has a username, returns a t.me link of the chat.
     link = Optional(str)

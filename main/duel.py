@@ -13,9 +13,9 @@ def duel(update: Update, context: CallbackContext) -> Message:
     """Duel the person if he has whitegloved you."""
     # Get users and record
     init_data = update.message.from_user
-    init_tag = f'[{init_data.first_name}](tg://user?id={init_data.id})'
+    init_tag = f'[{init_data.full_name}](tg://user?id={init_data.id})'
     targ_data = update.message.reply_to_message.from_user
-    targ_tag = f'[{targ_data.first_name}](tg://user?id={targ_data.id})'
+    targ_tag = f'[{targ_data.full_name}](tg://user?id={targ_data.id})'
     record_user_chat_data(update, context, init_data, targ_data)
     # Check if the target has whitegloved the initiator
     if not called_to_duel(update, init_data, targ_data):
