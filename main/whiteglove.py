@@ -1,8 +1,10 @@
 """Basically, a call for a duel."""
 from telegram import Update, User, Message
 from telegram.ext import CallbackContext
+from main import randomizer
 from main.helpers import validity_check, record_user_chat_data
 from main.database import *
+from phrases.whiteglove_phrases import SLAPS
 
 
 @validity_check
@@ -20,8 +22,7 @@ def whiteglove(update: Update, context: CallbackContext) -> Message:
     Scores[Users[init_data.id], Chats[update.message.chat.id]].target_id = \
         Users[targ_data.id]
     # Notify that the whiteglove call was successful
-    update.message.reply_text(
-        text=(f'{init_tag} вызвал {targ_tag} на дуэль!\n'
-              f'{targ_tag} теперь может использовать /duel на {init_tag}.'),
-        parse_mode='Markdown'
-    )
+    reply = randomizer.choice(SLAPS).replace(
+        'init', init_tag).replace('target', targ_tag) + '.\n'
+    reply += f'{targ_tag} теперь может провести дуэль с {init_tag}, чтобы попробовать отомстить.'
+    update.message.reply_text(text=reply, parse_mode='Markdown')
